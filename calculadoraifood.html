@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Lucro iFood Flexível</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .taxa-info {
+            font-size: 0.9em;
+            color: #007bff;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+        }
+        .resultado {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid #28a745;
+            border-radius: 4px;
+            background-color: #e2f0e3;
+        }
+        .resultado p {
+            margin: 5px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .resultado strong {
+            color: #28a745;
+            font-size: 1.3em;
+        }
+        .custo-total strong {
+            color: #dc3545;
+            font-size: 1.1em;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .checkbox-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Análise de Lucro de Vendas iFood</h1>
+
+    <label for="valorProduto">1. Valor de Venda do Produto (R$)</label>
+    <input type="number" id="valorProduto" value="0" min="0" step="0.01" oninput="calcularLucro()">
+
+    <label for="custoProduto">2. Custo do Produto (Insumos + Embalagens em R$)</label>
+    <input type="number" id="custoProduto" value="0" min="0" step="0.01" oninput="calcularLucro()">
+
+    <label for="taxaIfood">3. Plano Taxa iFood (Comissão)</label>
+    <select id="taxaIfood" onchange="calcularLucro()">
+        <option value="0.12">12% (Plano Básico)</option>
+        <option value="0.23">23% (Plano Entrega)</option>
+    </select>
+    <div class="taxa-info">Selecionar o plano correto é essencial para o cálculo.</div>
+    
+    <label for="taxaPagamento">4. Taxa de Pagamento (3,20% Padrão)</label>
+    <div class="taxa-info">Desconto fixo de 3,20% sobre o Valor do Produto (para vendas no crédito/débito).</div>
+    <input type="hidden" id="taxaPagamentoValor" value="0.032">
+
+    <label for="taxaExtra">5. Taxa Extra Opcional (Ex: Manutenção ou Outros)</label>
+    <input type="number" id="taxaExtra" value="0.00" min="0" step="0.01" oninput="calcularLucro()">
+    <div class="taxa-info">Adicione custos fixos ou variáveis que o iFood não cobre.</div>
+
+    <label>6. Desconto Campanha Inteligente</label>
+    <div class="checkbox-group">
+        <input type="checkbox" id="campanhaInteligente" onchange="calcularLucro()">
+        <label for="campanhaInteligente" style="font-weight: normal; margin-bottom: 0;">Aplicar Desconto Fixo de R$ 5,00?</label>
+    </div>
+    <div class="taxa-info">Se marcada, aplica um Desconto de R$ 5,00.</div>
+
+    <label for="custoEntrega">7. Custo Variável de Entrega (R$)</label>
+    <input type="number" id="custoEntrega" value="1.23" min="0" step="0.01" oninput="calcularLucro()">
+
+    <div class="resultado">
+        <p class="custo-total">Custo Total dos Descontos e Despesas: <strong id="resultadoCustoTotal">R$ 0,00</strong></p>
+        <hr>
+        <p>Seu Lucro (R$): <strong id="resultadoLucro">R$ 0,00</strong></p>
+    </div>
+</div>
+
+<script>
+    function calcularLucro() {
+        // 1. Coleta e converte os valores de entrada
+        const valorProduto = parseFloat(document.getElementById('valorProduto').value) || 0;
+        const custoProduto = parseFloat(document.getElementById('custoProduto').value) || 0;
+        const custoEntrega = parseFloat(document.getElementById('custoEntrega').value) || 0;
+        const taxaExtra = parseFloat(document.getElementById('taxaExtra').value) || 0;
+        
+        const campanhaAtiva = document.getElementById('campanhaInteligente').checked;
+
+        // 2. Coleta as taxas variáveis/fixas
+        const taxaIfoodPercentual = parseFloat(document.getElementById('taxaIfood').value); // 0.12 ou 0.23
+        const taxaPagamentoPercentual = parseFloat(document.getElementById('taxaPagamentoValor').value); // 0.032
+        const descontoCampanhaFixo = campanhaAtiva ? 5.00 : 0.00;
+
+        // --- CÁLCULOS DOS DESCONTOS ---
+
+        // 3. Desconto iFood (Comissão: 12% ou 23% sobre o valor do produto)
+        const descontoIfood = valorProduto * taxaIfoodPercentual;
+
+        // 4. Desconto Pagamento (3,20% sobre o valor do produto)
+        const descontoPagamento = valorProduto * taxaPagamentoPercentual;
+
+        // 5. CÁLCULO DO CUSTO TOTAL
+        // Custo Total = Custo Produto + Desc. iFood + Desc. Pagamento + Desc. Campanha + Custo Entrega + Taxa Extra
+        const custoTotal = custoProduto + descontoIfood + descontoPagamento + descontoCampanhaFixo + custoEntrega + taxaExtra;
+        
+        // 6. CÁLCULO DO LUCRO
+        const lucro = valorProduto - custoTotal;
+
+        // --- EXIBIÇÃO DOS RESULTADOS ---
+
+        // Função para formatar o valor como Real Brasileiro (R$ 0.000,00)
+        const formatarMoeda = (valor) => {
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        };
+
+        // Atualiza o CUSTO TOTAL
+        document.getElementById('resultadoCustoTotal').textContent = formatarMoeda(custoTotal);
+
+        // Atualiza o LUCRO
+        document.getElementById('resultadoLucro').textContent = formatarMoeda(lucro);
+        
+        // Se o lucro for negativo, muda a cor para vermelho
+        const elementoLucro = document.getElementById('resultadoLucro');
+        elementoLucro.style.color = lucro < 0 ? '#dc3545' : '#28a745';
+        
+    }
+
+    // Chama a função ao carregar para iniciar com valores padrão
+    window.onload = calcularLucro;
+</script>
+
+</body>
+</html>
